@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hospital Management System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f7f6; }
+        h1, h2 { color: #333; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); width: 45%; min-width: 300px; }
+        input, select, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+    </style>
+</head>
+<body>
+
+<h1>🏥 Hospital Management Dashboard</h1>
+
+<div class="container">
+    <!-- Add Doctor Form -->
+    <div class="card">
+        <h2>Add New Doctor</h2>
+        <form id="doctorForm">
+            <input type="text" id="docName" placeholder="Doctor Name" required>
+            <input type="text" id="docSpec" placeholder="Specialization" required>
+            <input type="email" id="docEmail" placeholder="Email" required>
+            <input type="text" id="docPhone" placeholder="Phone Number" required>
+            <input type="text" id="docDays" placeholder="Available Days (e.g. Mon-Fri)" required>
+            <input type="number" id="docFee" placeholder="Consultation Fee" required>
+            <button type="submit">Add Doctor</button>
+        </form>
+    </div>
+
+    <!-- Book Appointment Form -->
+    <div class="card">
+        <h2>Book Appointment</h2>
+        <form id="appointmentForm">
+            <input type="number" id="appDocId" placeholder="Doctor ID" required>
+            <input type="text" id="patName" placeholder="Patient Name" required>
+            <input type="email" id="patEmail" placeholder="Patient Email" required>
+            <input type="text" id="patPhone" placeholder="Patient Phone" required>
+            <input type="datetime-local" id="appTime" required>
+            <button type="submit" style="background-color: #007bff;">Book Appointment</button>
+        </form>
+    </div>
+</div>
+
+<hr style="margin: 30px 0;">
+
+<!-- Lists Display -->
+<div class="container">
+    <div class="card" style="width: 100%;">
+        <h2>Doctors List</h2>
+        <button onclick="loadDoctors()" style="width: auto; background-color: #17a2b8;">Refresh Doctors</button>
+        <table id="doctorsTable">
+            <thead>
+            <tr><th>ID</th><th>Name</th><th>Specialization</th><th>Phone</th><th>Fee</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="card" style="width: 100%;">
+        <h2>Appointments List</h2>
+        <button onclick="loadAppointments()" style="width: auto; background-color: #17a2b8;">Refresh Appointments</button>
+        <table id="appointmentsTable">
+            <thead>
+            <tr><th>ID</th><th>Patient Name</th><th>Doctor Name</th><th>Time</th><th>Status</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_BASE = "http://localhost:8080/api";
+
+    // Add Doctor
+    document.getElementById("doctorForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const doctor = {
+            name: document.getElementById("docName").value,
+            specialization: document.getElementById("docSpec").value,
+            email: document.getElementById("docEmail").value,
+            phone: document.getElementById("docPhone").value,
+            availableDays: document.getElementById("docDays").value,
+            consultationFee: parseFloat(document.getElementById("docFee").value)
+        };
+        await fetch(`${API_BASE}/doctors`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(doctor)
+        });
+        alert("Doctor Added Successfully!");
+        document.getElementById("doctorForm").reset();
+        loadDoctors();
+    });
+
+    // Book Appointment
+    document.getElementById("appointmentForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const appointment = {
+            doctor: { id: parseInt(document.getElementById("appDocId").value) },
+            patientName: document.getElementById("patName").value,
+            patientEmail: document.getElementById("patEmail").value,
+            patientPhone: document.getElementById("patPhone").value,
+            appointmentTime: document.getElementById("appTime").value
+        };
+        await fetch(`${API_BASE}/appointments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(appointment)
+        });
+        alert("Appointment Booked Successfully!");
+        document.getElementById("appointmentForm").reset();
+        loadAppointments();
+    });
+
+    // Load Doctors
+    async function loadDoctors() {
+        const res = await fetch(`${API_BASE}/doctors`);
+        const doctors = await res.json();
+        const tbody = document.querySelector("#doctorsTable tbody");
+        tbody.innerHTML = "";
+        doctors.forEach(d => {
+            tbody.innerHTML += `<tr><td>${d.id}</td><td>${d.name}</td><td>${d.specialization}</td><td>${d.phone}</td><td>₹${d.consultationFee}</td></tr>`;
+        });
+    }
+
+    // Load Appointments
+    async function loadAppointments() {
+        const res = await fetch(`${API_BASE}/appointments`);
+        const appointments = await res.json();
+        const tbody = document.querySelector("#appointmentsTable tbody");
+        tbody.innerHTML = "";
+        appointments.forEach(a => {
+            tbody.innerHTML += `<tr><td>${a.id}</td><td>${a.patientName}</td><td>${a.doctor ? a.doctor.name : 'N/A'}</td><td>${a.appointmentTime}</td><td>${a.status}</td></tr>`;
+        });
+    }
+
+    // Initial Load
+    loadDoctors();
+    loadAppointments();
+</script>
+</body>
+</html>
